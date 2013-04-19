@@ -14,13 +14,14 @@ bl_info = {
     "warning": "",
     "wiki_url": "",
     "tracker_url": "",
-    "category": "3D View"}
+    "category": "Development"}
 
 OFFSET_X = 0
 OFFSET_Y = 15
 FLOAT_FMT = "%.3F"
 
 def draw_pbone_matrices(self, context, obj, pbone):
+    dm = context.window_manager.display_matrix
     pbone_location_world = pbone.matrix.to_translation()
     for p in pbone.parent_recursive:
         pbone_location_world = p.matrix_basis * pbone_location_world
@@ -34,12 +35,15 @@ def draw_pbone_matrices(self, context, obj, pbone):
 
     texts = []
 
-    texts.append(("Matrix:",
-                  [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix]))
-    texts.append(("Matrix Basis:",
-                  [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix_basis]))
-    texts.append(("Matrix Channel:",
-                  [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix_channel]))
+    if dm.show_matrix_pbone:
+        texts.append(("Matrix:",
+                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix]))
+    if dm.show_matrix_basis_pbone:
+        texts.append(("Matrix Basis:",
+                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix_basis]))
+    if dm.show_matrix_channel:
+        texts.append(("Matrix Channel:",
+                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix_channel]))
 
     for title, data in texts:
         blf.position(0, loc_x, loc_y, 0)
@@ -52,6 +56,7 @@ def draw_pbone_matrices(self, context, obj, pbone):
         loc_y -= OFFSET_Y / 2
 
 def draw_object_matrices(self, context, obj):
+    dm = context.window_manager.display_matrix
     mode = obj.mode
 
     loc_x, loc_y = location_3d_to_region_2d(
@@ -68,14 +73,22 @@ def draw_object_matrices(self, context, obj):
                 draw_pbone_matrices(self, context, obj, pbone)
 
     elif mode == 'OBJECT':
-        texts.append(("Matrix Basis:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in obj.matrix_basis]))
-        texts.append(("Matrix Local:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in obj.matrix_local]))
-        texts.append(("Matrix Parent Inverse:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in obj.matrix_parent_inverse]))
-        texts.append(("Matrix World:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in obj.matrix_world]))
+        if dm.show_matrix_basis_obj:
+            texts.append(("Matrix Basis:",
+                          [", ".join([FLOAT_FMT % n for n in vec])
+                           for vec in obj.matrix_basis]))
+        if dm.show_matrix_local_obj:
+            texts.append(("Matrix Local:",
+                          [", ".join([FLOAT_FMT % n for n in vec])
+                           for vec in obj.matrix_local]))
+        if dm.show_matrix_pinverse:
+            texts.append(("Matrix Parent Inverse:",
+                          [", ".join([FLOAT_FMT % n for n in vec])
+                           for vec in obj.matrix_parent_inverse]))
+        if dm.show_matrix_world:
+            texts.append(("Matrix World:",
+                          [", ".join([FLOAT_FMT % n for n in vec])
+                           for vec in obj.matrix_world]))
 
     for title, data in texts:
         blf.position(0, loc_x, loc_y, 0)
@@ -163,13 +176,43 @@ class VIEW3D_PT_ADH_display_matrix(bpy.types.Panel):
         return False
 
     def draw(self, context):
+        layout = self.layout
+        dm = context.window_manager.display_matrix
+
         if context.window_manager.display_matrix.enabled:        
-            self.layout.operator('view3d.adh_display_matrix', text='Disable')
+            layout.operator('view3d.adh_display_matrix', text='Disable')
         else:
-            self.layout.operator('view3d.adh_display_matrix', text='Enable')
+            layout.operator('view3d.adh_display_matrix', text='Enable')
+
+        box = layout.box()
+        col = box.column(align=True)
+        col.label("Object:")
+        col.prop(dm, 'show_matrix_local_obj')
+        col.prop(dm, 'show_matrix_basis_obj')
+        col.prop(dm, 'show_matrix_pinverse')
+        col.prop(dm, 'show_matrix_world')
+        
+        box = layout.box()
+        col = box.column(align=True)
+        col.label("Pose Bone:")
+        col.prop(dm, 'show_matrix_pbone')
+        col.prop(dm, 'show_matrix_basis_pbone')
+        col.prop(dm, 'show_matrix_channel')
 
 class ADH_DisplayMatrixProps(bpy.types.PropertyGroup):
     enabled = bpy.props.BoolProperty(default=False)
+
+    loc_x = bpy.props.IntProperty(name='LocX', default=0)
+    loc_y = bpy.props.IntProperty(name='LocY', default=0)
+
+    show_matrix_pbone = bpy.props.BoolProperty(name="Matrix", default=True)
+    show_matrix_basis_pbone = bpy.props.BoolProperty(name="Matrix Basis", default=True)
+    show_matrix_channel = bpy.props.BoolProperty(name="Matrix Channel", default=True)
+
+    show_matrix_local_obj = bpy.props.BoolProperty(name="Matrix Local", default=True)
+    show_matrix_basis_obj = bpy.props.BoolProperty(name="Matrix Basis", default=True)
+    show_matrix_pinverse = bpy.props.BoolProperty(name="Matrix Parent Inverse", default=True)
+    show_matrix_world = bpy.props.BoolProperty(name="Matrix World", default=True)
 
 def register():
     bpy.utils.register_module(__name__)
@@ -177,7 +220,7 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
-    VIEW3D_PT_ADH_display_matrix.handle_remove(bpy.context)
+    VIEW3D_OT_ADH_display_matrix.handle_remove(bpy.context)
     del bpy.types.WindowManager.display_matrix
 
 if __name__ == "__main__":
