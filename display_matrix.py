@@ -20,30 +20,12 @@ OFFSET_X = 0
 OFFSET_Y = 15
 FLOAT_FMT = "%.3F"
 
-def draw_pbone_matrices(self, context, obj, pbone):
-    dm = context.window_manager.display_matrix
-    pbone_location_world = pbone.matrix.to_translation()
-    for p in pbone.parent_recursive:
-        pbone_location_world = p.matrix_basis * pbone_location_world
-    pbone_location_world = obj.matrix_world * pbone_location_world
-
+def draw_text_array(context, vector, texts):
     loc_x, loc_y = location_3d_to_region_2d(
         context.region,
         context.space_data.region_3d,
-        pbone_location_world)
+        vector)
     loc_x += OFFSET_X
-
-    texts = []
-
-    if dm.show_matrix_pbone:
-        texts.append(("Matrix:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix]))
-    if dm.show_matrix_basis_pbone:
-        texts.append(("Matrix Basis:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix_basis]))
-    if dm.show_matrix_channel:
-        texts.append(("Matrix Channel:",
-                      [", ".join([FLOAT_FMT % n for n in vec]) for vec in pbone.matrix_channel]))
 
     for title, data in texts:
         blf.position(0, loc_x, loc_y, 0)
@@ -55,15 +37,33 @@ def draw_pbone_matrices(self, context, obj, pbone):
             loc_y -= OFFSET_Y
         loc_y -= OFFSET_Y / 2
 
-def draw_object_matrices(self, context, obj):
+def draw_pbone_matrices(self, context, obj, pbone):
+    dm = context.window_manager.display_matrix
+    pbone_location_world = pbone.matrix.to_translation()
+    for p in pbone.parent_recursive:
+        pbone_location_world = p.matrix_basis * pbone_location_world
+    pbone_location_world = obj.matrix_world * pbone_location_world
+
+    texts = []
+
+    if dm.show_matrix_pbone:
+        texts.append(("Matrix:",
+                      [", ".join([FLOAT_FMT % n for n in vec])
+                       for vec in pbone.matrix]))
+    if dm.show_matrix_basis_pbone:
+        texts.append(("Matrix Basis:",
+                      [", ".join([FLOAT_FMT % n for n in vec])
+                       for vec in pbone.matrix_basis]))
+    if dm.show_matrix_channel:
+        texts.append(("Matrix Channel:",
+                      [", ".join([FLOAT_FMT % n for n in vec])
+                       for vec in pbone.matrix_channel]))
+
+    draw_text_array(context, pbone_location_world, texts)
+
+def draw_matrices(self, context, obj):
     dm = context.window_manager.display_matrix
     mode = obj.mode
-
-    loc_x, loc_y = location_3d_to_region_2d(
-        context.region,
-        context.space_data.region_3d,
-        obj.location)
-    loc_x += OFFSET_X
 
     texts = []
 
@@ -90,20 +90,12 @@ def draw_object_matrices(self, context, obj):
                           [", ".join([FLOAT_FMT % n for n in vec])
                            for vec in obj.matrix_world]))
 
-    for title, data in texts:
-        blf.position(0, loc_x, loc_y, 0)
-        blf.draw(0, title)
-        loc_y -= OFFSET_Y
-        for d in data:
-            blf.position(0, loc_x + OFFSET_X, loc_y, 0)
-            blf.draw(0, d)
-            loc_y -= OFFSET_Y
-        loc_y -= OFFSET_Y / 2
+    draw_text_array(context, obj.location, texts)
 
 def draw_matrix_callback(self, context):
     if context.window_manager.display_matrix.enabled:
         for obj in context.selected_objects:
-            draw_object_matrices(self, context, obj)
+            draw_matrices(self, context, obj)
 
 class VIEW3D_OT_ADH_display_matrix(bpy.types.Operator):
     """Display all relevant matrices for active object"""
