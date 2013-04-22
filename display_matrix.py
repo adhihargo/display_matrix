@@ -46,15 +46,15 @@ def draw_pbone_matrices(self, context, obj, pbone):
 
     texts = []
 
-    if dm.show_matrix_pbone:
+    if dm.show_matrix_pbone_world:
         texts.append(("Matrix:",
                       [", ".join([FLOAT_FMT % n for n in vec])
                        for vec in pbone.matrix]))
-    if dm.show_matrix_basis_pbone:
+    if dm.show_matrix_pbone_basis:
         texts.append(("Matrix Basis:",
                       [", ".join([FLOAT_FMT % n for n in vec])
                        for vec in pbone.matrix_basis]))
-    if dm.show_matrix_channel:
+    if dm.show_matrix_pbone_channel:
         texts.append(("Matrix Channel:",
                       [", ".join([FLOAT_FMT % n for n in vec])
                        for vec in pbone.matrix_channel]))
@@ -67,25 +67,25 @@ def draw_matrices(self, context, obj):
 
     texts = []
 
-    if mode == 'POSE':
+    if mode == 'POSE' and dm.show_matrix_pbone:
         if context.selected_pose_bones:
             for pbone in context.selected_pose_bones:
                 draw_pbone_matrices(self, context, obj, pbone)
 
-    elif mode == 'OBJECT':
-        if dm.show_matrix_basis_obj:
+    elif mode == 'OBJECT' and dm.show_matrix_obj:
+        if dm.show_matrix_obj_basis:
             texts.append(("Matrix Basis:",
                           [", ".join([FLOAT_FMT % n for n in vec])
                            for vec in obj.matrix_basis]))
-        if dm.show_matrix_local_obj:
+        if dm.show_matrix_obj_local:
             texts.append(("Matrix Local:",
                           [", ".join([FLOAT_FMT % n for n in vec])
                            for vec in obj.matrix_local]))
-        if dm.show_matrix_pinverse:
+        if dm.show_matrix_obj_pinverse:
             texts.append(("Matrix Parent Inverse:",
                           [", ".join([FLOAT_FMT % n for n in vec])
                            for vec in obj.matrix_parent_inverse]))
-        if dm.show_matrix_world:
+        if dm.show_matrix_obj_world:
             texts.append(("Matrix World:",
                           [", ".join([FLOAT_FMT % n for n in vec])
                            for vec in obj.matrix_world]))
@@ -177,19 +177,21 @@ class VIEW3D_PT_ADH_display_matrix(bpy.types.Panel):
             layout.operator('view3d.adh_display_matrix', text='Enable')
 
         box = layout.box()
+        col = box.column()
+        col.prop(dm, 'show_matrix_obj', text="Object:", toggle=True)
         col = box.column(align=True)
-        col.label("Object:")
-        col.prop(dm, 'show_matrix_local_obj')
-        col.prop(dm, 'show_matrix_basis_obj')
-        col.prop(dm, 'show_matrix_pinverse')
-        col.prop(dm, 'show_matrix_world')
+        col.prop(dm, 'show_matrix_obj_local')
+        col.prop(dm, 'show_matrix_obj_basis')
+        col.prop(dm, 'show_matrix_obj_pinverse')
+        col.prop(dm, 'show_matrix_obj_world')
         
         box = layout.box()
+        col = box.column()
+        col.prop(dm, 'show_matrix_pbone', text="Pose Bone:", toggle=True)
         col = box.column(align=True)
-        col.label("Pose Bone:")
-        col.prop(dm, 'show_matrix_pbone')
-        col.prop(dm, 'show_matrix_basis_pbone')
-        col.prop(dm, 'show_matrix_channel')
+        col.prop(dm, 'show_matrix_pbone_world')
+        col.prop(dm, 'show_matrix_pbone_basis')
+        col.prop(dm, 'show_matrix_pbone_channel')
 
 class ADH_DisplayMatrixProps(bpy.types.PropertyGroup):
     enabled = bpy.props.BoolProperty(default=False)
@@ -197,14 +199,16 @@ class ADH_DisplayMatrixProps(bpy.types.PropertyGroup):
     loc_x = bpy.props.IntProperty(name='LocX', default=0)
     loc_y = bpy.props.IntProperty(name='LocY', default=0)
 
-    show_matrix_pbone = bpy.props.BoolProperty(name="Matrix", default=True)
-    show_matrix_basis_pbone = bpy.props.BoolProperty(name="Matrix Basis", default=True)
-    show_matrix_channel = bpy.props.BoolProperty(name="Matrix Channel", default=True)
+    show_matrix_pbone = bpy.props.BoolProperty(name="", default=True)
+    show_matrix_pbone_world = bpy.props.BoolProperty(name="Matrix", default=True)
+    show_matrix_pbone_basis = bpy.props.BoolProperty(name="Matrix Basis", default=True)
+    show_matrix_pbone_channel = bpy.props.BoolProperty(name="Matrix Channel", default=True)
 
-    show_matrix_local_obj = bpy.props.BoolProperty(name="Matrix Local", default=True)
-    show_matrix_basis_obj = bpy.props.BoolProperty(name="Matrix Basis", default=True)
-    show_matrix_pinverse = bpy.props.BoolProperty(name="Matrix Parent Inverse", default=True)
-    show_matrix_world = bpy.props.BoolProperty(name="Matrix World", default=True)
+    show_matrix_obj = bpy.props.BoolProperty(name="", default=True)
+    show_matrix_obj_local = bpy.props.BoolProperty(name="Matrix Local", default=True)
+    show_matrix_obj_basis = bpy.props.BoolProperty(name="Matrix Basis", default=True)
+    show_matrix_obj_pinverse = bpy.props.BoolProperty(name="Matrix Parent Inverse", default=True)
+    show_matrix_obj_world = bpy.props.BoolProperty(name="Matrix World", default=True)
 
 def register():
     bpy.utils.register_module(__name__)
